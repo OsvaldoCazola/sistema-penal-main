@@ -51,3 +51,20 @@ npm-debug.log*
 ### OS ###
 .DS_Store
 Thumbs.db
+
+# Cache directories
+.kilo/
+.cache/
+.temp/
+
+# OS generated files  
+nul
+NUL
+*.tmp
+cookies.txt
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
