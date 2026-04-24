@@ -1,7 +1,8 @@
 version: '3.8'
 
 services:
-  # Backend API
+
+  # ── Backend API ──────────────────────────────────────────────
   api:
     build:
       context: .
@@ -11,26 +12,32 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=default
       - DB_URL=jdbc:postgresql://postgres:5432/sistema_penal
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres123
-      - JWT_SECRET=sistema-penal-secret-key-256-bits
-      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD é obrigatório}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET é obrigatório}
+      - GROQ_API_KEY=${GROQ_API_KEY:?GROQ_API_KEY é obrigatório}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - sistema-penal-network
     restart: unless-stopped
 
-  # PostgreSQL Database
+  # ── PostgreSQL ───────────────────────────────────────────────
   postgres:
     image: postgres:14
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_DB=sistema_penal
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD é obrigatório}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -42,7 +49,28 @@ services:
       - sistema-penal-network
     restart: unless-stopped
 
-  # Frontend (Next.js)
+  # ── Redis (Cache) ────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sistema-penal-network
+    restart: unless-stopped
+
+  # ── Frontend (Next.js) ───────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -57,7 +85,7 @@ services:
       - sistema-penal-network
     restart: unless-stopped
 
-  # Nginx (Reverse Proxy)
+  # ── Nginx (Reverse Proxy) ────────────────────────────────────
   nginx:
     image: nginx:alpine
     ports:
@@ -78,3 +106,4 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:

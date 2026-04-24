@@ -1,27 +1,27 @@
 spring:
-  # H2 Database - Perfil para desenvolvimento sem PostgreSQL
+  # ── H2 Database — perfil de desenvolvimento sem PostgreSQL ───────────────
   datasource:
-    url: jdbc:h2:mem:sistema_penal;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:mem:sistema_penal;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=KEY
     username: sa
-    password: 
+    password:
     driver-class-name: org.h2.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
     show-sql: false
     defer-datasource-initialization: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-    # Não falhar na inicialização se houver erros de DDL
-    open-in-view: false
+        format_sql: false
 
-  # Desabilitar Flyway para H2 (usará ddl-auto)
+  # Flyway desactivado para H2 — schema criado pelo Hibernate ddl-auto
   flyway:
     enabled: false
 
-  # Console H2 habilitado
+  # Console H2 — apenas em desenvolvimento, nunca em produção
   h2:
     console:
       enabled: true
@@ -29,21 +29,37 @@ spring:
       settings:
         web-allow-others: false
 
-  # Desabilitar Redis para H2
+  # Redis desactivado no profile H2
   data:
     redis:
       repositories:
         enabled: false
 
-# Desabilitar batch para evitar conflito
+  # Spring Batch — não inicializar schema no H2
   batch:
     jdbc:
       initialize-schema: never
 
-  # Groq API (LLM)
+  # ── Groq API — NUNCA hardcode. Lida de variável de ambiente. ─────────────
+  # Em desenvolvimento: define GROQ_API_KEY no ficheiro .env
+  # Se não definida, o chat/IA retorna mensagem de "não configurado" graciosamente.
   groq:
-    api-key: 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
+    api-key: ${GROQ_API_KEY:}
     chat:
       options:
         model: llama-3.3-70b-versatile
         temperature: 0.7
+
+# JWT no profile H2 — ainda usa variável de ambiente por segurança
+jwt:
+  secret: ${JWT_SECRET:dGVzdC1zZWNyZXQtcGFyYS1kZXNlbnZvbHZpbWVudG8tb25seQ==}
+  expiration-ms: 3600000
+  refresh-expiration-ms: 604800000
+
+# Logging mais verbose em desenvolvimento
+logging:
+  level:
+    root: INFO
+    com.api.sistema_penal: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: INFO

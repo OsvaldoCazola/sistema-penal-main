@@ -2,384 +2,340 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VARIÁVEIS CSS — modo claro e modo escuro
+   Usadas pelos componentes para não depender só de classes Tailwind
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Backgrounds */
+  --bg-page:        #f5f6fa;
+  --bg-surface:     #ffffff;
+  --bg-surface-2:   #f9fafb;
+  --bg-surface-3:   #f3f4f6;
+  --bg-sidebar:     #1a2744;
+  --bg-header:      #ffffff;
+
+  /* Bordas */
+  --border:         #e5e7eb;
+  --border-strong:  #d1d5db;
+
+  /* Textos */
+  --text-primary:   #111827;
+  --text-secondary: #4b5563;
+  --text-muted:     #9ca3af;
+  --text-on-dark:   #ffffff;
+
+  /* Sidebar */
+  --sidebar-text:         rgba(255,255,255,0.65);
+  --sidebar-text-active:  #ffffff;
+  --sidebar-hover:        rgba(255,255,255,0.08);
+  --sidebar-active:       rgba(255,255,255,0.18);
+  --sidebar-border:       rgba(255,255,255,0.10);
+
+  /* Inputs */
+  --input-bg:       #f9fafb;
+  --input-border:   #e5e7eb;
+  --input-text:     #111827;
+}
+
+/* Modo escuro: azul naval escuro em todo o sistema */
+.dark {
+  /* Backgrounds */
+  --bg-page:        #0f172a;      /* Azul naval muito escuro — página */
+  --bg-surface:     #1e293b;      /* Painéis e cards — azul escuro */
+  --bg-surface-2:   #1a2744;      /* Superfície secundária */
+  --bg-surface-3:   #162035;      /* Superfície terciária */
+  --bg-sidebar:     #0f1d35;      /* Sidebar ainda mais escura */
+  --bg-header:      #0f1d35;      /* Header escuro */
+
+  /* Bordas */
+  --border:         #1e3a5f;      /* Bordas subtis azuis */
+  --border-strong:  #2d4a7a;
+
+  /* Textos — SEMPRE visíveis no escuro */
+  --text-primary:   #f1f5f9;      /* Quase branco */
+  --text-secondary: #94a3b8;      /* Cinza-azulado claro */
+  --text-muted:     #64748b;
+  --text-on-dark:   #ffffff;
+
+  /* Sidebar no escuro */
+  --sidebar-text:         rgba(148,163,184,0.85);
+  --sidebar-text-active:  #ffffff;
+  --sidebar-hover:        rgba(255,255,255,0.06);
+  --sidebar-active:       rgba(59,130,246,0.25);
+  --sidebar-border:       rgba(30,58,95,0.6);
+
+  /* Inputs */
+  --input-bg:       #1e293b;
+  --input-border:   #1e3a5f;
+  --input-text:     #f1f5f9;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
     scroll-behavior: smooth;
-    background-color: transparent;
   }
-  
+
   body {
     @apply antialiased;
-    background-color: transparent !important;
-    color: #4F4F4F;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
-  
-  /* Títulos mais formais e legíveis */
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
-    color: #4F4F4F;
+    color: var(--text-primary);
   }
 
-  /* Links mais evidentes */
   a {
-    @apply transition-colors duration-200 text-primary-700 hover:text-primary-600;
+    @apply transition-colors duration-200;
   }
 
-  /* Inputs mais acessíveis e formais */
   input, select, textarea {
-    @apply text-base text-gray-900;
+    @apply text-sm;
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--input-text);
   }
 
-  /* Placeholder mais visível */
   ::placeholder {
-    @apply text-gray-400;
+    color: var(--text-muted);
   }
 
-  /* Focus states mais visíveis para acessibilidade */
   :focus-visible {
-    @apply outline-none ring-2 ring-primary-700 ring-offset-1;
+    @apply outline-none ring-2 ring-blue-500 ring-offset-1;
   }
 
-  /* Seleção de texto */
   ::selection {
-    @apply bg-primary-400 text-primary-900;
+    background: #1d4ed8;
+    color: #ffffff;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENTES — usam variáveis CSS para suporte automático ao tema
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* Botão primário com tema Angola */
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-800 to-primary-700 text-white font-semibold rounded-md hover:shadow-lg focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
 
-  /* Botão secundário formal */
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 font-semibold rounded-md border border-gray-300 hover:bg-gray-50 hover:border-gray-400 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200;
-  }
-
-  /* Card moderno estilo dashboard */
-  .card-modern {
-    @apply bg-white rounded-xl p-4;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  /* Card formal */
+  /* ── Cards ───────────────────────────────────────────────────────────── */
   .card {
-    @apply bg-white rounded-xl border border-gray-100;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    @apply rounded-xl border;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 
-  /* Badge com tema Angola */
-  .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-sm text-xs font-medium;
+  .card-angola {
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    @apply rounded-xl border relative overflow-hidden;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+  .card-angola::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #CC092F 33.33%, #111 33.33%, #111 66.66%, #FFCC00 66.66%);
+    border-radius: 12px 12px 0 0;
   }
 
-  .badge-primary {
-    @apply bg-primary-700/10 text-primary-700;
+  /* ── Botões ──────────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg
+           focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm
+           bg-primary-800 text-white hover:bg-primary-900;
+  }
+  .dark .btn-primary {
+    @apply bg-primary-700 hover:bg-primary-600;
   }
 
-  .badge-success {
-    @apply bg-green-100 text-green-800;
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-lg
+           border transition-all duration-200 text-sm;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+  .btn-secondary:hover {
+    background-color: var(--bg-surface-2);
   }
 
-  .badge-warning {
-    @apply bg-yellow-100 text-yellow-800;
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white
+           font-medium rounded-lg hover:bg-red-700 transition-all duration-200 text-sm;
   }
 
-  .badge-danger {
-    @apply bg-red-100 text-red-800;
+  /* ── Badges ──────────────────────────────────────────────────────────── */
+  .badge       { @apply inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium; }
+  .badge-blue  { @apply bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300; }
+  .badge-green { @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300; }
+  .badge-amber { @apply bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300; }
+  .badge-red   { @apply bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300; }
+  .badge-gray  { @apply bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400; }
+
+  /* ── Input padrão ────────────────────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-3 py-2.5 rounded-lg border text-sm
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           transition-all duration-200;
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--input-text);
+  }
+  .input-field::placeholder {
+    color: var(--text-muted);
   }
 
-  /* Input group formal */
-  .input-group {
-    @apply relative;
+  /* ── Label ───────────────────────────────────────────────────────────── */
+  .field-label {
+    @apply block text-xs font-semibold uppercase tracking-wide mb-1.5;
+    color: var(--text-secondary);
   }
 
-  .input-group input,
-  .input-group select {
-    @apply block w-full py-3 px-4 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-700 focus:border-primary-700 transition-colors;
+  /* ── Tabelas ─────────────────────────────────────────────────────────── */
+  .table-modern thead th {
+    @apply text-left px-4 py-3 border-b text-xs uppercase tracking-wide font-semibold;
+    background-color: var(--bg-surface-2);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+  .table-modern tbody td {
+    @apply px-4 py-3.5 border-b text-sm;
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+  .table-modern tbody tr:hover td {
+    background-color: var(--bg-surface-2);
+  }
+  .table-modern tbody tr:last-child td {
+    @apply border-b-0;
   }
 
-  .input-group.has-icon input,
-  .input-group.has-icon select {
-    @apply pl-11;
+  /* ── Angola stripe ───────────────────────────────────────────────────── */
+  .angola-stripe {
+    background: linear-gradient(90deg, #CC092F 33.33%, #111 33.33%, #111 66.66%, #FFCC00 66.66%);
   }
 
-  .input-group .input-icon {
-    @apply absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500;
+  /* ── Section header ──────────────────────────────────────────────────── */
+  .section-header {
+    @apply text-xs font-semibold uppercase tracking-widest mb-3;
+    color: var(--text-muted);
   }
 
-  /* Seção do dashboard */
-  .dashboard-section {
-    @apply bg-white rounded-xl p-5;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  /* ── Stat Card (dashboard) ───────────────────────────────────────────── */
+  .stat-card {
+    @apply rounded-xl border relative overflow-hidden transition-shadow duration-200 hover:shadow-md p-5;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
   }
-
-  .dashboard-section-title {
-    @apply text-lg font-semibold text-gray-900 mb-4;
+  .stat-card-title {
+    @apply text-sm font-medium mt-1;
+    color: var(--text-secondary);
   }
-
-  /* Barra decorativa institucional */
-  .angola-official-bar {
-    @apply h-1 flex;
+  .stat-card-value {
+    @apply text-2xl font-bold leading-none;
+    color: var(--text-primary);
   }
-  
-  .angola-official-bar > div:first-child {
-    @apply bg-primary-800;
-  }
-  
-  .angola-official-bar > div:nth-child(2) {
-    @apply bg-primary-700;
-  }
-  
-  .angola-official-bar > div:last-child {
-    @apply bg-primary-600;
+  .stat-card-subtitle {
+    @apply text-xs mt-0.5;
+    color: var(--text-muted);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer utilities {
-  /* Scrollbar personalizada */
+
+  /* Sidebar offset */
+  .sidebar-offset {
+    margin-left: 14rem;
+    transition: margin-left 300ms ease-in-out;
+  }
+
+  /* Scrollbar fina — tema claro */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #9ca3af transparent;
+    scrollbar-color: #e5e7eb transparent;
   }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent !important;
-    @apply rounded;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded hover:bg-gray-400;
-  }
+  .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 9999px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
 
-  /* Truncar texto com ellipsis */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  /* Scrollbar fina — tema escuro */
+  .dark .scrollbar-thin {
+    scrollbar-color: #1e3a5f transparent;
   }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #1e3a5f; }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #2d4a7a; }
 
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  /* Scrollbar sidebar */
+  .scrollbar-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
   }
+  .scrollbar-sidebar::-webkit-scrollbar { width: 4px; }
+  .scrollbar-sidebar::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .scrollbar-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
 
-  /* Animação de loading */
-  .animate-spin-slow {
-    animation: spin 2s linear infinite;
-  }
-
-  /* Gradiente de texto Angola */
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-800 to-primary-600;
-  }
-
-  /* Overlay escuro */
-  .overlay-dark {
-    @apply absolute inset-0 bg-black/60;
-  }
-
-  /* Background de tribunal (padrão formal) */
-  .bg-tribunal-pattern {
-    background-color: #1c2e48;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  }
-
-  /* Fundo institucional Angola */
-  .bg-institucional {
-    @apply bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900;
-  }
-
-  /* Fundo institucional legado */
-  .bg-institucional-old {
-    @apply bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900;
-  }
+  /* Line clamp */
+  .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .line-clamp-3 { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 }
 
-/* Mapbox customização */
-.mapboxgl-popup-content {
-  border-radius: 4px !important;
-  padding: 0 !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   OVERRIDES: garantir que elementos nativos respondem ao tema
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Selects nativos */
+select {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
 }
 
-.mapboxgl-popup-close-button {
-  font-size: 20px;
-  padding: 4px 8px;
+/* Recharts (gráficos) no modo escuro */
+.dark .recharts-text { fill: #94a3b8 !important; }
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line { stroke: #1e3a5f !important; }
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border-color: #1e3a5f !important;
+  color: #f1f5f9 !important;
 }
 
-/* Print styles */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  body {
-    font-size: 12pt;
-  }
-  
-  .card {
-    border: 1px solid #e5e7eb;
-    box-shadow: none;
-  }
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMAÇÕES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* =========================================
-   TEMA ANGOLANO OFICIAL
-   ========================================= */
-
-/* Cores da bandeira */
-.angola-red { color: #CC092F; }
-.angola-yellow { color: #FFCC00; }
-.bg-angola-red { background-color: #CC092F; }
-.bg-angola-yellow { background-color: #FFCC00; }
-
-/* Gradiente da bandeira */
-.bg-angola-flag {
-  background: linear-gradient(180deg, #CC092F 0%, #CC092F 50%, #000 50%, #000 100%);
-}
-
-/* Barra tricolor decorativa */
-.angola-stripe {
-  background: linear-gradient(90deg, #CC092F 33.33%, #000 33.33%, #000 66.66%, #FFCC00 66.66%);
-}
-
-/* Animações suaves */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-in-up { animation: fadeInUp 0.35s ease-out forwards; }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Cards angolanos oficiais */
-.card-angola {
-  @apply relative overflow-hidden bg-white rounded-xl border border-gray-100;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.card-angola::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #CC092F 33.33%, #000 33.33%, #000 66.66%, #FFCC00 66.66%);
-}
-
-/* Hover com brilho sutil */
-.hover-glow {
-  @apply transition-all duration-300;
-}
-
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(59, 90, 126, 0.1);
-}
-
-/* Estilos formais para tabelas */
-.table-formal {
-  @apply w-full text-sm;
-}
-
-.table-formal th {
-  @apply bg-gray-50 text-gray-700 font-semibold text-left px-4 py-3 border-b border-gray-200;
-}
-
-.table-formal td {
-  @apply px-4 py-3 border-b border-gray-100;
-}
-
-.table-formal tr:hover td {
-  @apply bg-gray-50;
-}
-
-/* Estilos formais para inputs */
-.input-formal {
-  @apply w-full px-4 py-2.5 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary-700 focus:border-primary-700;
-  @apply transition-colors;
-}
-
-.input-formal-error {
-  @apply border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500;
-}
-
-/* Utilitários adicionais para layouts modernos */
-
-/* Backdrop blur para painéis */
-.backdrop-blur-formal {
-  @apply backdrop-blur-md bg-white/80;
-}
-
-/* Sombra moderna para cards */
-.shadow-card-modern {
-  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* Hover com escala suave */
-.hover-scale {
-  @apply transition-transform duration-200 ease-out;
-}
-
-.hover-scale:hover {
-  @apply scale-[1.02];
-}
-
-/* Anel de foco personalizado */
-.ring-formal {
-  @apply ring-1 ring-gray-900/5;
-}
-
-/* Gradiente de texto moderno */
-.text-gradient-modern {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500;
-}
-
-/* Background com padrão sutil */
-.bg-pattern-subtle {
-  background-color: #f9fafb;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239ca3af' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
-
-/* Borda com gradiente */
-.border-gradient {
-  border: 1px solid transparent;
-  background: linear-gradient(white, white) padding-box,
-              linear-gradient(90deg, #233b5a, #3b5a7e) border-box;
-}
-
-/* Animação de pulse sutil */
-@keyframes pulse-subtle {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@media print {
+  .no-print { display: none !important; }
+  body { font-size: 12pt; background: white; color: black; }
+  .card { border: 1px solid #e5e7eb; box-shadow: none; background: white; }
 }

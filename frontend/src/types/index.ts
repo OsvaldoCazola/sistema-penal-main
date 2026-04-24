@@ -327,3 +327,27 @@ export interface EventoTimeline {
   data: string;
   responsavel: string | null;
 }
+
+export interface SimulacaoRegistroSummary {
+  id: string;
+  tipoCrime?: string;
+  artigoNumero?: string;
+  artigoTitulo?: string;
+  probabilidade?: number;
+  resultado?: string;
+  nivelConfianca?: string;
+  createdAt?: string;
+}
+
+export interface VerificacaoRegistroSummary {
+  id: string;
+  tipoCrime?: string;
+  artigoNumero?: string;
+  penaFinal?: string;
+  penaBase?: string;
+  regime?: string;
+  numAjustes?: number;
+  alerta?: boolean;
+  mensagemAlerta?: string;
+  createdAt?: string;
+}

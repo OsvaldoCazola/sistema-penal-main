@@ -1,5 +1,9 @@
 import api from '@/lib/api';
-import type { DashboardResponse } from '@/types';
+import type {
+  DashboardResponse,
+  SimulacaoRegistroSummary,
+  VerificacaoRegistroSummary,
+} from '@/types';
 
 export interface CrimeEstatisticas {
   crimesPorRegiao: {
@@ -12,8 +16,21 @@ export interface CrimeEstatisticas {
     quantidade: number;
     percentual: number;
   }[];
+  tiposCrimeProcessos: {
+    tipoCrime: string;
+    quantidade: number;
+    percentual: number;
+  }[];
   totalCrimes: number;
   totalSimulacoes: number;
+  filtroTipoCrime?: string | null;
+}
+
+export interface AtividadesRecentesResponse {
+  simulacoes: SimulacaoRegistroSummary[];
+  totalSimulacoes: number;
+  verificacoes: VerificacaoRegistroSummary[];
+  totalVerificacoes: number;
 }
 
 export const dashboardService = {
@@ -27,8 +44,17 @@ export const dashboardService = {
     return response.data;
   },
 
-  async getCrimeEstatisticas(): Promise<CrimeEstatisticas> {
-    const response = await api.get<CrimeEstatisticas>('/dashboard/estatisticas-crimes');
+  async getCrimeEstatisticas(tipoCrime?: string): Promise<CrimeEstatisticas> {
+    const response = await api.get<CrimeEstatisticas>('/dashboard/estatisticas-crimes', {
+      params: tipoCrime ? { tipoCrime } : undefined,
+    });
+    return response.data;
+  },
+
+  async getAtividadesRecentes(page = 0, size = 6): Promise<AtividadesRecentesResponse> {
+    const response = await api.get<AtividadesRecentesResponse>('/dashboard/atividades-recentes', {
+      params: { page, size },
+    });
     return response.data;
   },
 };

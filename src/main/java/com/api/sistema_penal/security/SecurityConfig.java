@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -35,55 +36,78 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${security.cors.allowed-origins}")
-    private String allowedOrigins;
+    @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:3001}")
+    private String[] allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // Preflight OPTIONS
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Públicos
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/conteudos/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/tipos-crime/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/leis/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/artigos/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/tribunais/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/traducoes/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/sentencas/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/busca/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/chat").permitAll()
-                        .requestMatchers("/conteudos/**").permitAll()
-                        .requestMatchers("/portal/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/noticias/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/denuncias").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/denuncias/consulta/**").permitAll()
-                        
-                        // Protegidos por role
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // Permissões: apenas ADMIN pode gerenciar; listar todas as permissões é restrito a ADMIN
-                        .requestMatchers(HttpMethod.POST, "/api/permissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/permissions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/permissions/**").hasRole("ADMIN")
-                        .requestMatchers("/api/permissions").hasRole("ADMIN")
-                        .requestMatchers("/api/permissions/usuario/*").hasRole("ADMIN")
-                        // POST /leis e similares para admin apenas
-                        .requestMatchers(HttpMethod.POST, "/leis/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/leis/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/leis/**").hasRole("ADMIN")
-                        
-                        // Qualquer autenticado
-                        .anyRequest().authenticated()
-                )
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Necessário para o console H2 no perfil de desenvolvimento
+            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+            .authorizeHttpRequests(auth -> auth
+                // ── Preflight OPTIONS ────────────────────────────────────
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // ── Autenticação (pública) ───────────────────────────────
+                .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/auth/register").permitAll()
+                .requestMatchers("/auth/refresh").permitAll()
+                .requestMatchers("/auth/logout").permitAll()
+                .requestMatchers("/auth/esqueci-senha").permitAll()
+                .requestMatchers("/auth/redefinir-senha").permitAll()
+
+                // CORRIGIDO: /auth/register-admin só acessível para ADMIN autenticado
+                // (não deve ser endpoint público em produção)
+                .requestMatchers("/auth/register-admin").hasRole("ADMIN")
+
+                // ── Swagger / OpenAPI ────────────────────────────────────
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api-docs/**").permitAll()
+
+                // ── Actuator (health e info são públicos) ─────────────────
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
+
+                // ── Console H2 (apenas em dev, bloqueado via perfil) ──────
+                .requestMatchers("/h2-console/**").permitAll()
+
+                // ── Leitura pública de legislação ─────────────────────────
+                .requestMatchers(HttpMethod.GET, "/leis/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/artigos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/sentencas/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/busca/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/tipos-crime/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/noticias/**").permitAll()
+
+                // ── Chat público ──────────────────────────────────────────
+                .requestMatchers(HttpMethod.POST, "/chat").permitAll()
+
+                // ── Denúncias (envio público, consulta por protocolo) ─────
+                .requestMatchers(HttpMethod.POST, "/denuncias").permitAll()
+                .requestMatchers(HttpMethod.GET, "/denuncias/consulta/**").permitAll()
+
+                // ── Escrita em legislação — apenas ADMIN ──────────────────
+                .requestMatchers(HttpMethod.POST, "/leis/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/leis/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/leis/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/leis/**").hasRole("ADMIN")
+
+                // ── Admin geral ────────────────────────────────────────────
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/permissions/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/permissions/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/permissions/**").hasRole("ADMIN")
+                .requestMatchers("/api/permissions").hasRole("ADMIN")
+                .requestMatchers("/api/permissions/usuario/*").hasRole("ADMIN")
+
+                // ── Tudo o resto requer autenticação ──────────────────────
+                .anyRequest().authenticated()
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -91,10 +115,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setExposedHeaders(List.of("Authorization", "Content-Type", "X-Total-Count"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -117,6 +141,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12); // CORRIGIDO: strength 12 para produção (padrão 10)
     }
 }

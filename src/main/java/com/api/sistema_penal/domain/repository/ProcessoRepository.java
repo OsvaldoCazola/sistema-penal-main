@@ -64,6 +64,9 @@ public interface ProcessoRepository extends JpaRepository<Processo, UUID>, JpaSp
     @Query("SELECT p.provincia, COUNT(p) FROM Processo p WHERE p.provincia IS NOT NULL AND p.provincia <> '' GROUP BY p.provincia ORDER BY COUNT(p) DESC")
     java.util.List<Object[]> countGroupByProvincia();
 
+    @Query("SELECT p.provincia, COUNT(p) FROM Processo p WHERE p.provincia IS NOT NULL AND p.provincia <> '' AND (:tipoCrime IS NULL OR LOWER(p.tipoCrime) = LOWER(:tipoCrime)) GROUP BY p.provincia ORDER BY COUNT(p) DESC")
+    java.util.List<Object[]> countGroupByProvinciaAndTipoCrime(@Param("tipoCrime") String tipoCrime);
+
     @Query("""
             SELECT p FROM Processo p 
             WHERE (:inicio IS NULL OR p.dataAbertura >= :inicio)

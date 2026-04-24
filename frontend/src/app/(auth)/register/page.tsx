@@ -5,33 +5,33 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { Role } from '@/types';
-import { 
-  UserIcon, 
-  EnvelopeIcon, 
-  LockClosedIcon, 
-  BriefcaseIcon,
-  CheckCircleIcon,
-  InformationCircleIcon,
+import {
+  UserIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
-  SparklesIcon,
-  ArrowRightIcon,
-  ArrowLeftIcon
+  CheckCircleIcon,
+  ScaleIcon,
+  ShieldCheckIcon,
+  BriefcaseIcon,
+  AcademicCapIcon,
+  BuildingLibraryIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
 const registerSchema = z.object({
   nome: z.string().min(3, 'O nome deve ter no mínimo 3 caracteres'),
-  email: z.string().email('Por favor, insira um email válido'),
+  email: z.string().email('Insira um email válido'),
   senha: z.string()
     .min(6, 'A senha deve ter no mínimo 6 caracteres')
-    .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula')
-    .regex(/[0-9]/, 'A senha deve conter pelo menos um número'),
+    .regex(/[A-Z]/, 'Deve conter pelo menos uma letra maiúscula')
+    .regex(/[0-9]/, 'Deve conter pelo menos um número'),
   confirmarSenha: z.string(),
   role: z.nativeEnum(Role).optional(),
-}).refine((data) => data.senha === data.confirmarSenha, {
+}).refine(d => d.senha === d.confirmarSenha, {
   message: 'As senhas não coincidem',
   path: ['confirmarSenha'],
 });
@@ -39,422 +39,264 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const roleOptions = [
-  { value: Role.JUIZ, label: 'Juiz', descricao: 'Gestão de processos, sentenças e jurisprudência', icon: '⚖️' },
-  { value: Role.PROCURADOR, label: 'Procurador', descricao: 'Ministério Público, investigação e acusações', icon: '🏛️' },
-  { value: Role.ADVOGADO, label: 'Advogado', descricao: 'Gestão de processos e consulta de jurisprudência', icon: '⚖️' },
-  { value: Role.ESTUDANTE, label: 'Estudante de Direito', descricao: 'Acesso ao modo de estudo e casos práticos', icon: '📚' },
+  {
+    value: Role.JUIZ,
+    label: 'Juiz',
+    descricao: 'Gestão de processos, sentenças e jurisprudência',
+    icon: ScaleIcon,
+  },
+  {
+    value: Role.PROCURADOR,
+    label: 'Procurador',
+    descricao: 'Ministério Público, investigação e acusações',
+    icon: BuildingLibraryIcon,
+  },
+  {
+    value: Role.ADVOGADO,
+    label: 'Advogado',
+    descricao: 'Gestão de processos e consulta de jurisprudência',
+    icon: BriefcaseIcon,
+  },
+  {
+    value: Role.ESTUDANTE,
+    label: 'Estudante de Direito',
+    descricao: 'Acesso ao modo de estudo e casos práticos',
+    icon: AcademicCapIcon,
+  },
 ];
+
+const inputCls = 'block w-full px-3 py-2.5 text-sm border rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role>(Role.JUIZ);
   const { register: registerUser } = useAuth();
-  
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterFormData>({
+
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: Role.JUIZ,
-    },
+    defaultValues: { role: Role.JUIZ },
   });
 
   const senha = watch('senha', '');
-  
-  const passwordStrength = {
-    length: senha.length >= 6,
+  const strength = {
+    length:    senha.length >= 6,
     uppercase: /[A-Z]/.test(senha),
-    number: /[0-9]/.test(senha),
+    number:    /[0-9]/.test(senha),
   };
-
-  const strengthPercentage = Object.values(passwordStrength).filter(Boolean).length / 3 * 100;
+  const strengthPct = Object.values(strength).filter(Boolean).length / 3 * 100;
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const registerData = {
-        nome: data.nome,
-        email: data.email,
-        senha: data.senha,
-        role: selectedRole,
-      };
-      
-      await registerUser(registerData);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRoleSelect = (role: Role) => {
-    setSelectedRole(role);
-    setValue('role', role);
+      await registerUser({ nome: data.nome, email: data.email, senha: data.senha, role: selectedRole });
+    } finally { setIsLoading(false); }
   };
 
   return (
-    <div className="animate-in fade-in duration-500">
-      {/* Barra decorativa institucional */}
-      <div className="flex h-1 rounded-sm overflow-hidden mb-6">
-        <div className="flex-1 bg-primary-800"></div>
-        <div className="flex-1 bg-primary-600"></div>
-        <div className="flex-1 bg-primary-800"></div>
-      </div>
-
-      {/* Cabeçalho com ícone decorativo */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-500/30 mb-4 transform hover:scale-105 transition-transform">
-          <SparklesIcon className="w-8 h-8 text-white" />
+    <>
+      {/* Cabeçalho */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-[#1a2744] rounded-lg flex items-center justify-center flex-shrink-0">
+          <ScaleIcon className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-          Criar Nova Conta
-        </h2>
-        <p className="text-gray-500">
-          Junte-se à plataforma de justiça digital de Angola
-        </p>
-      </div>
-
-      {/* Indicador de passos melhorado */}
-      <div className="flex items-center justify-center gap-3 mb-8">
-        <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold transition-all duration-300 ${
-          step >= 1 
-            ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-500/30' 
-            : 'bg-gray-100 text-gray-400'
-        }`}>
-          1
-        </div>
-        <div className="relative w-16 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-          <div 
-            className={`absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-500 ease-out ${
-              step >= 2 ? 'w-full' : 'w-0'
-            }`} 
-          />
-        </div>
-        <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold transition-all duration-300 ${
-          step >= 2 
-            ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-500/30' 
-            : 'bg-gray-100 text-gray-400'
-        }`}>
-          2
+        <div>
+          <h1 className="text-base font-bold text-gray-900 leading-tight">Solicitar Acesso</h1>
+          <p className="text-xs text-gray-400">Sistema Penal · República de Angola</p>
         </div>
       </div>
 
-      {/* Etiquetas dos passos */}
-      <div className="flex justify-center gap-8 mb-6">
-        <span className={`text-xs font-medium transition-colors ${step === 1 ? 'text-primary-600' : 'text-gray-400'}`}>
-          Dados Pessoais
-        </span>
-        <span className={`text-xs font-medium transition-colors ${step === 2 ? 'text-primary-600' : 'text-gray-400'}`}>
-          Segurança
-        </span>
+      {/* Indicador de passos */}
+      <div className="flex items-center gap-2 mb-6">
+        {[1, 2].map(s => (
+          <div key={s} className="flex items-center gap-2">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+              s < step ? 'bg-emerald-500 text-white' : s === step ? 'bg-[#1a2744] text-white' : 'bg-gray-100 text-gray-400'
+            }`}>
+              {s < step ? <CheckCircleIcon className="h-3.5 w-3.5" /> : s}
+            </div>
+            <span className={`text-xs ${s === step ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+              {s === 1 ? 'Dados pessoais' : 'Função'}
+            </span>
+            {s < 2 && <div className="w-8 h-px bg-gray-200 mx-1" />}
+          </div>
+        ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {/* ── Passo 1: Dados pessoais ── */}
         {step === 1 && (
-          <div className="animate-in slide-in-from-right duration-300">
+          <div className="space-y-4">
             {/* Nome */}
-            <div className="mb-5">
-              <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Nome completo
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Nome completo *
               </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
-                </div>
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
-                  id="nome"
-                  type="text"
-                  placeholder="Ex: João Manuel da Silva"
-                  className={`block w-full pl-11 pr-4 py-3 border rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white ${
-                    errors.nome ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
                   {...register('nome')}
+                  type="text"
+                  placeholder="Nome e apelido"
+                  className={`${inputCls} pl-9 ${errors.nome ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                 />
               </div>
-              {errors.nome && (
-                <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
-                  {errors.nome.message}
-                </p>
-              )}
+              {errors.nome && <p className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
             </div>
 
             {/* Email */}
-            <div className="mb-5">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Email institucional *
               </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
-                </div>
+              <div className="relative">
+                <EnvelopeIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
-                  id="email"
-                  type="email"
-                  placeholder="exemplo@email.ao"
-                  className={`block w-full pl-11 pr-4 py-3 border rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white ${
-                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
                   {...register('email')}
+                  type="email"
+                  placeholder="utilizador@tribunal.gov.ao"
+                  className={`${inputCls} pl-9 ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                 />
               </div>
-              {errors.email && (
-                <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
-                  {errors.email.message}
-                </p>
-              )}
+              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
             </div>
 
-            {/* Tipo de utilizador - Cards interativos */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Tipo de utilizador
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {roleOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleRoleSelect(option.value)}
-                    className={`p-3 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
-                      selectedRole === option.value
-                        ? 'border-primary-500 bg-primary-50 shadow-lg shadow-primary-500/10'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{option.icon}</span>
-                      <span className={`text-sm font-medium ${
-                        selectedRole === option.value ? 'text-primary-700' : 'text-gray-700'
-                      }`}>
-                        {option.label}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 line-clamp-2">
-                      {option.descricao}
-                    </p>
-                  </button>
-                ))}
-              </div>
-              <input type="hidden" {...register('role')} value={selectedRole} />
-            </div>
-
-            <Button
-              type="button"
-              className="w-full py-3 text-base font-semibold group bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all"
-              size="lg"
-              onClick={() => setStep(2)}
-            >
-              <span className="flex items-center justify-center gap-2">
-                Continuar
-                <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </Button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="animate-in slide-in-from-left duration-300">
             {/* Senha */}
-            <div className="mb-5">
-              <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Criar senha
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Senha *
               </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <LockClosedIcon className="h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
-                </div>
+              <div className="relative">
+                <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
-                  id="senha"
+                  {...register('senha')}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Mínimo 6 caracteres"
-                  className={`block w-full pl-11 pr-12 py-3 border rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white ${
-                    errors.senha ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  {...register('senha')}
+                  className={`${inputCls} pl-9 pr-10 ${errors.senha ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
+                <button type="button" onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.senha && (
-                <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
-                  {errors.senha.message}
-                </p>
+              {errors.senha && <p className="mt-1 text-xs text-red-600">{errors.senha.message}</p>}
+              {/* Força */}
+              {senha && (
+                <div className="mt-2">
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${strengthPct}%`, background: strengthPct === 100 ? '#059669' : strengthPct >= 66 ? '#D97706' : '#DC2626' }} />
+                  </div>
+                </div>
               )}
-              
-              {/* Barra de força da senha */}
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600">Força da senha</span>
-                  <span className={`text-xs font-medium ${
-                    strengthPercentage === 100 ? 'text-green-600' : 
-                    strengthPercentage >= 66 ? 'text-yellow-600' : 'text-red-500'
-                  }`}>
-                    {strengthPercentage === 100 ? 'Forte' : 
-                     strengthPercentage >= 66 ? 'Média' : 'Fraca'}
-                  </span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      strengthPercentage === 100 ? 'bg-gradient-to-r from-green-400 to-green-600' : 
-                      strengthPercentage >= 66 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 
-                      'bg-gradient-to-r from-red-400 to-red-500'
-                    }`}
-                    style={{ width: `${strengthPercentage}%` }}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-                  <div className={`flex items-center gap-1.5 p-2 rounded-lg transition-all ${
-                    passwordStrength.length ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-50'
-                  }`}>
-                    <CheckCircleIcon className={`w-4 h-4 ${passwordStrength.length ? 'text-green-500' : 'text-gray-300'}`} />
-                    <span>6+ chars</span>
-                  </div>
-                  <div className={`flex items-center gap-1.5 p-2 rounded-lg transition-all ${
-                    passwordStrength.uppercase ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-50'
-                  }`}>
-                    <CheckCircleIcon className={`w-4 h-4 ${passwordStrength.uppercase ? 'text-green-500' : 'text-gray-300'}`} />
-                    <span>Maiúscula</span>
-                  </div>
-                  <div className={`flex items-center gap-1.5 p-2 rounded-lg transition-all ${
-                    passwordStrength.number ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-50'
-                  }`}>
-                    <CheckCircleIcon className={`w-4 h-4 ${passwordStrength.number ? 'text-green-500' : 'text-gray-300'}`} />
-                    <span>Número</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Confirmar senha */}
-            <div className="mb-5">
-              <label htmlFor="confirmarSenha" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Confirmar senha
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                Confirmar senha *
               </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <LockClosedIcon className="h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
-                </div>
+              <div className="relative">
+                <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
-                  id="confirmarSenha"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Repita a senha"
-                  className={`block w-full pl-11 pr-12 py-3 border rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white ${
-                    errors.confirmarSenha ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
                   {...register('confirmarSenha')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Repita a senha"
+                  className={`${inputCls} pl-9 ${errors.confirmarSenha ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </button>
               </div>
-              {errors.confirmarSenha && (
-                <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                  <span className="inline-block w-1 h-1 rounded-full bg-red-500" />
-                  {errors.confirmarSenha.message}
-                </p>
-              )}
+              {errors.confirmarSenha && <p className="mt-1 text-xs text-red-600">{errors.confirmarSenha.message}</p>}
             </div>
 
-            {/* Termos com estilo melhorado */}
-            <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 transition-all group">
-              <input 
-                type="checkbox" 
-                required
-                className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 transition-colors" 
-              />
-              <span className="text-sm text-gray-600 group-hover:text-gray-700">
-                Li e aceito os{' '}
-                <a href="#" className="text-primary-600 hover:text-primary-700 font-medium hover:underline">
-                  Termos de Uso
-                </a>
-                {' '}e a{' '}
-                <a href="#" className="text-primary-600 hover:text-primary-700 font-medium hover:underline">
-                  Política de Privacidade
-                </a>
-              </span>
-            </label>
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="w-full py-2.5 bg-[#1a2744] text-white text-sm font-semibold rounded-lg hover:bg-[#243561] transition-colors mt-2"
+            >
+              Continuar →
+            </button>
+          </div>
+        )}
 
-            {/* Botões */}
-            <div className="flex gap-3 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 py-3 group border-2 hover:bg-gray-50"
-                size="lg"
-                onClick={() => setStep(1)}
-              >
-                <span className="flex items-center justify-center gap-2">
-                  <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                  Voltar
-                </span>
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 py-3 text-base font-semibold bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all" 
-                size="lg" 
-                isLoading={isLoading}
-              >
-                Criar Conta
-              </Button>
+        {/* ── Passo 2: Função ── */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-gray-700 mb-1">Seleccione a sua função</p>
+            <div className="space-y-2">
+              {roleOptions.map(opt => (
+                <label
+                  key={opt.value}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    selectedRole === opt.value
+                      ? 'border-[#1a2744] bg-[#1a2744]/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={opt.value}
+                    checked={selectedRole === opt.value}
+                    onChange={() => setSelectedRole(opt.value)}
+                    className="sr-only"
+                  />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    selectedRole === opt.value ? 'bg-[#1a2744] text-white' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    <opt.icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${selectedRole === opt.value ? 'text-[#1a2744]' : 'text-gray-700'}`}>
+                      {opt.label}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{opt.descricao}</p>
+                  </div>
+                  {selectedRole === opt.value && (
+                    <CheckCircleIcon className="h-4 w-4 text-[#1a2744] flex-shrink-0" />
+                  )}
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button type="button" onClick={() => setStep(1)}
+                className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                ← Voltar
+              </button>
+              <button type="submit" disabled={isLoading}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#1a2744] text-white text-sm font-semibold rounded-lg hover:bg-[#243561] disabled:opacity-60 transition-colors">
+                {isLoading ? (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : <ShieldCheckIcon className="h-4 w-4" />}
+                {isLoading ? 'A registar...' : 'Criar Conta'}
+              </button>
             </div>
           </div>
         )}
       </form>
 
-      {/* Separador */}
-      <div className="relative my-8">
+      {/* Link para login */}
+      <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-gray-100" />
         </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-white text-gray-500">Já tem conta?</span>
+        <div className="relative flex justify-center">
+          <span className="px-3 bg-white text-xs text-gray-400">Já tem conta?</span>
         </div>
       </div>
-
-      {/* Link para login */}
-      <Link
-        href="/login"
-        className="block w-full py-3 px-4 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl text-center hover:bg-gray-50 hover:border-primary-300 hover:text-primary-700 transition-all group"
-      >
-        <span className="flex items-center justify-center gap-2">
-          Entrar no Sistema
-          <ArrowRightIcon className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-        </span>
+      <Link href="/login"
+        className="block w-full py-2.5 text-center text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+        Entrar no sistema
       </Link>
 
-      {/* Informação adicional com estilo angolano */}
-      <div className="mt-8 p-4 bg-gradient-to-r from-primary-50 to-amber-50 rounded-xl border border-primary-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary-200/30 to-amber-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="relative">
-          <div className="flex items-start gap-3">
-            <InformationCircleIcon className="w-5 h-5 text-primary-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-primary-800">
-              <strong>Bem-vindo ao Sistema Penal de Angola.</strong> O seu registo será validado 
-              pela nossa equipa para garantir a segurança da plataforma.
-            </p>
-          </div>
-        </div>
+      <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <ShieldCheckIcon className="w-3.5 h-3.5" />
+        <span>Acesso sujeito a aprovação pela administração</span>
       </div>
-    </div>
+    </>
   );
 }

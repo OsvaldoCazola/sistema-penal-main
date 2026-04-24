@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -52,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         usuario = usuarioRepository.findByIdWithPermissions(UUID.fromString(userIdStr)).orElse(null);
                     }
                 } catch (Exception e) {
-                    logger.debug("Token não contém userId, buscando por email");
+                    log.debug("Token não contém userId, buscando por email");
                 }
                 
                 // Fallback para tokens antigos
@@ -69,11 +71,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
-                    logger.warn("Token inválido ou usuário não encontrado para o email: " + userEmail);
+                    log.warn("Token inválido ou usuário não encontrado para o email: " + userEmail);
                 }
             }
         } catch (Exception e) {
-            logger.error("Erro ao processar token JWT: " + e.getMessage());
+            log.error("Erro ao processar token JWT: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

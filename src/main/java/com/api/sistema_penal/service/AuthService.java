@@ -77,17 +77,18 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request, String ip) {
+        String email = request.email().toLowerCase().trim();
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.senha())
+                    new UsernamePasswordAuthenticationToken(email, request.senha())
             );
         } catch (BadCredentialsException e) {
-            auditService.log(null, "LOGIN_FALHA", "Usuario", null, 
-                    java.util.Map.of("email", request.email()), ip);
+            auditService.log(null, "LOGIN_FALHA", "Usuario", null,
+                    java.util.Map.of("email", email), ip);
             throw new BusinessException("Credenciais inválidas");
         }
 
-        Usuario usuario = usuarioRepository.findByEmail(request.email())
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BusinessException("Usuário não encontrado"));
 
         if (!usuario.getAtivo()) {

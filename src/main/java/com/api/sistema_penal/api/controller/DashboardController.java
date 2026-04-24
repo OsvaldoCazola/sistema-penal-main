@@ -83,8 +83,9 @@ public class DashboardController {
     @GetMapping("/estatisticas-crimes")
     @PreAuthorize("hasAnyRole('ADMIN', 'JUIZ', 'PROCURADOR', 'ESTUDANTE', 'ADVOGADO')")
     @Operation(summary = "Estatísticas de crimes: por região e mais simulados")
-    public ResponseEntity<CrimeEstatisticasResponse> getCrimeEstatisticas() {
-        return ResponseEntity.ok(service.getCrimeEstatisticas());
+    public ResponseEntity<CrimeEstatisticasResponse> getCrimeEstatisticas(
+            @RequestParam(required = false) String tipoCrime) {
+        return ResponseEntity.ok(service.getCrimeEstatisticas(tipoCrime));
     }
 
     @GetMapping("/artigos-mais-aplicados")

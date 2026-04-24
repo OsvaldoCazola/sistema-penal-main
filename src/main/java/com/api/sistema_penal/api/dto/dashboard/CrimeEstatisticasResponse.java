@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * DTO para estatísticas de crimes
@@ -28,6 +27,11 @@ public class CrimeEstatisticasResponse {
     private List<TipoCrimeStat> crimesMaisSimulados;
 
     /**
+     * Tipos de crime registados em processos
+     */
+    private List<TipoCrimeStat> tiposCrimeProcessos;
+
+    /**
      * Total de crimes registrados
      */
     private Long totalCrimes;
@@ -36,6 +40,11 @@ public class CrimeEstatisticasResponse {
      * Total de simulações realizadas
      */
     private Long totalSimulacoes;
+
+    /**
+     * Filtro actualmente aplicado para tipo de crime
+     */
+    private String filtroTipoCrime;
 
     @Data
     @Builder

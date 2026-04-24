@@ -1,94 +1,141 @@
 spring:
   application:
     name: sistema-penal-api
-  
-  profiles:
-    active: ${SPRING_PROFILE:h2}  # Use 'h2' para dev, 'default' para PostgreSQL
 
-  # Banco de Dados PostgreSQL
+  profiles:
+    active: ${SPRING_PROFILE:h2}
+
+  # ── PostgreSQL (profile default/prod) ────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/sistema_penal
-    username: postgres
-    password: postgres
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sistema_penal}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:3}
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
 
-  # JPA/Hibernate
+  # ── JPA / Hibernate ───────────────────────────────────────────────────────
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate       # NUNCA usar create/update em produção
     show-sql: false
+    open-in-view: false        # Previne N+1 queries acidentais
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
 
-  # Flyway Migrations
+  # ── Flyway Migrations ─────────────────────────────────────────────────────
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    validate-on-migrate: true
+    out-of-order: false
 
-  # Groq API (LLM)
+  # ── Groq API (LLM) ───────────────────────────────────────────────────────
+  # ⚠️  Defina GROQ_API_KEY no .env ou como variável de ambiente do servidor.
   groq:
-    api-key: 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
+    api-key: ${GROQ_API_KEY:}
     chat:
       options:
         model: llama-3.3-70b-versatile
         temperature: 0.7
 
-  # Mail (opcional)
+  # ── Cache (ConcurrentMap — sem Redis externo necessário) ─────────────────
+  cache:
+    type: simple
+
+  # ── Email ─────────────────────────────────────────────────────────────────
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+      mail.smtp.timeout: 10000
 
-# Servidor
+# ── Servidor ─────────────────────────────────────────────────────────────────
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+  error:
+    include-stacktrace: never       # Nunca expor stack trace em produção
+    include-message: on_param       # Apenas com ?message=true
+    include-binding-errors: on_param
+  tomcat:
+    max-threads: ${TOMCAT_MAX_THREADS:200}
+    min-spare-threads: 10
 
-# JWT Configuration
+# ── JWT ───────────────────────────────────────────────────────────────────────
+# ⚠️  Gerar com: python3 -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
 jwt:
-  secret: ${JWT_SECRET:c3VhLWNoYXZlLXNlY3JldGEtbXVpdG8tbG9uZ2EtY29tLXBlbG8tbWVub3MtMjU2LWJpdHMtcGFyYS1zZWd1cmFuY2E=}
-  expiration-ms: 3600000       # 1 hora em milissegundos
-  refresh-expiration-ms: 604800000  # 7 dias em milissegundos
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION:3600000}           # 1 hora
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 dias
 
-# Logging
+# ── Logging ───────────────────────────────────────────────────────────────────
 logging:
   level:
-    root: INFO
-    com.api.sistema_penal: DEBUG
-    org.hibernate.SQL: DEBUG
+    root: WARN
+    com.api.sistema_penal: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+    org.flywaydb: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:logs/sistema-penal.log}
+    max-size: 10MB
+    max-history: 30
 
-# OpenAPI/Swagger
+# ── OpenAPI / Swagger ─────────────────────────────────────────────────────────
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: ${SWAGGER_ENABLED:false}   # false em produção, true em dev
   swagger-ui:
     path: /swagger-ui.html
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:false}
 
-# Security/CORS
-security:
-  cors:
-    allowed-origins: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:4200,http://localhost:5173
-
-# Actuator
+# ── Actuator ──────────────────────────────────────────────────────────────────
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,loggers
+      base-path: /actuator
   endpoint:
     health:
       show-details: when_authorized
+      show-components: when_authorized
+    loggers:
+      enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ── CORS / Segurança ──────────────────────────────────────────────────────────
+security:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001}

@@ -20,32 +20,33 @@ interface TableProps<T> {
 }
 
 export function Table<T>({
-  columns,
-  data,
-  keyExtractor,
-  onRowClick,
-  isLoading,
-  emptyMessage = 'Nenhum registro encontrado',
+  columns, data, keyExtractor, onRowClick, isLoading,
+  emptyMessage = 'Nenhum registo encontrado',
 }: TableProps<T>) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200">
-            {columns.map((col) => (
+          <tr style={{ borderBottom: '1px solid var(--border)' }}>
+            {columns.map(col => (
               <th
                 key={col.key}
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider',
+                  'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider',
                   col.className
                 )}
+                style={{
+                  backgroundColor: 'var(--bg-surface-2)',
+                  color:           'var(--text-secondary)',
+                  borderBottom:    '1px solid var(--border)',
+                }}
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody>
           {isLoading ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-12 text-center">
@@ -59,23 +60,27 @@ export function Table<T>({
             </tr>
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center text-gray-500">
+              <td colSpan={columns.length} className="px-4 py-12 text-center" style={{ color: 'var(--text-muted)' }}>
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            data.map((item) => (
+            data.map(item => (
               <tr
                 key={keyExtractor(item)}
                 onClick={() => onRowClick?.(item)}
-                className={cn(
-                  'hover:bg-gray-50 transition-colors',
-                  onRowClick && 'cursor-pointer'
-                )}
+                className={cn(onRowClick && 'cursor-pointer')}
+                style={{ borderBottom: '1px solid var(--border)' }}
+                onMouseEnter={e => { if (onRowClick) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-surface-2)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
               >
-                {columns.map((col) => (
-                  <td key={col.key} className={cn('px-4 py-3 text-sm text-gray-900', col.className)}>
-                    {col.render ? col.render(item) : (item as any)[col.key]}
+                {columns.map(col => (
+                  <td
+                    key={col.key}
+                    className={cn('px-4 py-3 text-sm', col.className)}
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {col.render ? col.render(item) : (item as Record<string, unknown>)[col.key] as ReactNode}
                   </td>
                 ))}
               </tr>

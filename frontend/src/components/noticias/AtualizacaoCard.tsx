@@ -9,75 +9,39 @@ interface AtualizacaoCardProps {
   atualizacao: Atualizacao;
 }
 
-// Ícones por tipo de atualização
 const getIconByTipo = (tipo: string) => {
   switch (tipo) {
-    case 'NOVA_LEI':
-      return <BookOpenIcon className="h-5 w-5" />;
-    case 'ALTERACAO_ARTIGO':
-      return <DocumentTextIcon className="h-5 w-5" />;
-    case 'NOVA_JURISPRUDENCIA':
-      return <ScaleIcon className="h-5 w-5" />;
-    case 'ATUALIZACAO_LEGISLATIVA':
-      return <DocumentTextIcon className="h-5 w-5" />;
-    default:
-      return <DocumentTextIcon className="h-5 w-5" />;
+    case 'NOVA_LEI':               return <BookOpenIcon className="h-5 w-5" />;
+    case 'ALTERACAO_ARTIGO':       return <DocumentTextIcon className="h-5 w-5" />;
+    case 'NOVA_JURISPRUDENCIA':    return <ScaleIcon className="h-5 w-5" />;
+    case 'ATUALIZACAO_LEGISLATIVA':return <DocumentTextIcon className="h-5 w-5" />;
+    default:                       return <DocumentTextIcon className="h-5 w-5" />;
   }
 };
 
-// Cores por tipo de atualização
+/* Cores que funcionam em modo claro e escuro via opacidade */
 const getColorsByTipo = (tipo: string) => {
   switch (tipo) {
     case 'NOVA_LEI':
-      return {
-        bg: 'bg-blue-50',
-        border: 'border-blue-200',
-        icon: 'bg-blue-100 text-blue-600',
-        badge: 'bg-blue-100 text-blue-700',
-      };
+      return { accent: '#3b82f6', badgeBg: 'rgba(59,130,246,0.12)', badgeText: '#3b82f6' };
     case 'ALTERACAO_ARTIGO':
-      return {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        icon: 'bg-amber-100 text-amber-600',
-        badge: 'bg-amber-100 text-amber-700',
-      };
+      return { accent: '#f59e0b', badgeBg: 'rgba(245,158,11,0.12)', badgeText: '#d97706' };
     case 'NOVA_JURISPRUDENCIA':
-      return {
-        bg: 'bg-purple-50',
-        border: 'border-purple-200',
-        icon: 'bg-purple-100 text-purple-600',
-        badge: 'bg-purple-100 text-purple-700',
-      };
+      return { accent: '#8b5cf6', badgeBg: 'rgba(139,92,246,0.12)', badgeText: '#8b5cf6' };
     case 'ATUALIZACAO_LEGISLATIVA':
-      return {
-        bg: 'bg-green-50',
-        border: 'border-green-200',
-        icon: 'bg-green-100 text-green-600',
-        badge: 'bg-green-100 text-green-700',
-      };
+      return { accent: '#10b981', badgeBg: 'rgba(16,185,129,0.12)', badgeText: '#10b981' };
     default:
-      return {
-        bg: 'bg-gray-50',
-        border: 'border-gray-200',
-        icon: 'bg-gray-100 text-gray-600',
-        badge: 'bg-gray-100 text-gray-700',
-      };
+      return { accent: '#6b7280', badgeBg: 'rgba(107,114,128,0.12)', badgeText: '#6b7280' };
   }
 };
 
 export default function AtualizacaoCard({ atualizacao }: AtualizacaoCardProps) {
   const router = useRouter();
   const colors = getColorsByTipo(atualizacao.tipo);
-  const icon = getIconByTipo(atualizacao.tipo);
+  const icon   = getIconByTipo(atualizacao.tipo);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-AO', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('pt-AO', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -89,48 +53,51 @@ export default function AtualizacaoCard({ atualizacao }: AtualizacaoCardProps) {
     <a
       href="#"
       onClick={handleClick}
-      className={`group block ${colors.bg} border ${colors.border} rounded-xl p-4 hover:shadow-md transition-all duration-200 cursor-pointer`}
+      className="group block rounded-xl border p-4 transition-all duration-200 cursor-pointer hover:shadow-md"
+      style={{
+        backgroundColor: 'var(--bg-surface)',
+        borderColor:     'var(--border)',
+        borderLeft:      `3px solid ${colors.accent}`,
+      }}
     >
       <div className="flex items-start gap-3">
-        {/* Ícone do tipo */}
-        <div className={`flex-shrink-0 p-2 rounded-lg ${colors.icon}`}>
+        {/* Ícone */}
+        <div className="flex-shrink-0 p-2 rounded-lg" style={{ backgroundColor: colors.badgeBg, color: colors.accent }}>
           {icon}
         </div>
 
         {/* Conteúdo */}
         <div className="flex-1 min-w-0">
-          {/* Badge do tipo e data */}
           <div className="flex items-center gap-2 mb-1">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors.badge}`}>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: colors.badgeBg, color: colors.badgeText }}>
               {atualizacao.tipoLabel}
             </span>
-            <span className="text-xs text-gray-500 flex items-center gap-1">
+            <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
               <CalendarIcon className="h-3 w-3" />
               {formatDate(atualizacao.dataPublicacao)}
             </span>
           </div>
 
-          {/* Título */}
-          <h4 className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-1">
+          <h4 className="font-semibold line-clamp-1 transition-colors" style={{ color: 'var(--text-primary)' }}>
             {atualizacao.titulo}
           </h4>
 
-          {/* Descrição */}
           {atualizacao.descricao && (
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+            <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
               {atualizacao.descricao}
             </p>
           )}
         </div>
 
-        {/* Setas de navegação */}
-        <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
+        <ArrowRightIcon className="h-4 w-4 flex-shrink-0 group-hover:translate-x-1 transition-all"
+          style={{ color: 'var(--text-muted)' }} />
       </div>
     </a>
   );
 }
 
-// Componente para listar atualizações
+/* ── Lista de atualizações ────────────────────────────────────────────────── */
 interface AtualizacaoListProps {
   atualizacoes: Atualizacao[];
   titulo?: string;
@@ -139,23 +106,16 @@ interface AtualizacaoListProps {
 export function AtualizacaoList({ atualizacoes, titulo }: AtualizacaoListProps) {
   if (atualizacoes.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <DocumentTextIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-        <p>Nenhuma atualização encontrada</p>
+      <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
+        <DocumentTextIcon className="h-12 w-12 mx-auto mb-3" style={{ color: 'var(--border)' }} />
+        <p>Nenhuma actualização encontrada</p>
       </div>
     );
   }
-
   return (
     <div className="space-y-3">
-      {titulo && (
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-          {titulo}
-        </h3>
-      )}
-      {atualizacoes.map((atualizacao) => (
-        <AtualizacaoCard key={atualizacao.id} atualizacao={atualizacao} />
-      ))}
+      {titulo && <h3 className="section-header">{titulo}</h3>}
+      {atualizacoes.map(a => <AtualizacaoCard key={a.id} atualizacao={a} />)}
     </div>
   );
 }

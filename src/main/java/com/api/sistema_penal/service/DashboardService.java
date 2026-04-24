@@ -312,51 +312,102 @@ public class DashboardService {
      */
     @Transactional(readOnly = true)
     public CrimeEstatisticasResponse getCrimeEstatisticas() {
+        return getCrimeEstatisticas(null);
+    }
+
+    @Transactional(readOnly = true)
+    public CrimeEstatisticasResponse getCrimeEstatisticas(String tipoCrimeFiltro) {
+        String filtroAplicado = (tipoCrimeFiltro != null && !tipoCrimeFiltro.isBlank())
+                ? tipoCrimeFiltro.trim()
+                : null;
+
         // Crimes por região
         List<RegiaoStat> crimesPorRegiao = new ArrayList<>();
-        long totalProcessos = processoRepository.count();
-        
+        long totalCrimes = 0L;
         try {
-            var regiaoList = processoRepository.countGroupByProvincia();
+            var regiaoList = processoRepository.countGroupByProvinciaAndTipoCrime(filtroAplicado);
             for (var arr : regiaoList) {
                 String regiao = (String) arr[0];
                 Long quantidade = (Long) arr[1];
-                double percentual = totalProcessos > 0 ? (quantidade * 100.0 / totalProcessos) : 0;
+                if (quantidade == null) {
+                    quantidade = 0L;
+                }
+                totalCrimes += quantidade;
                 crimesPorRegiao.add(RegiaoStat.builder()
-                    .regiao(regiao != null ? regiao : "Não especificado")
-                    .quantidade(quantidade)
-                    .percentual(Math.round(percentual * 100.0) / 100.0)
-                    .build());
+                        .regiao(regiao != null ? regiao : "Não especificado")
+                        .quantidade(quantidade)
+                        .percentual(0.0)
+                        .build());
             }
         } catch (Exception e) {
             log.warn("Erro ao buscar crimes por região: {}", e.getMessage());
         }
 
+        if (totalCrimes > 0) {
+            for (RegiaoStat stat : crimesPorRegiao) {
+                double percentual = (stat.getQuantidade() * 100.0) / totalCrimes;
+                stat.setPercentual(Math.round(percentual * 100.0) / 100.0);
+            }
+        }
+
+        // Tipos de crime registados em processos
+        List<TipoCrimeStat> tiposCrimeProcessos = new ArrayList<>();
+        long totalTipos = 0L;
+        try {
+            var tipoList = processoRepository.countGroupByTipoCrime();
+            for (var arr : tipoList) {
+                String tipoCrime = (String) arr[0];
+                Long quantidade = (Long) arr[1];
+                if (quantidade == null) {
+                    quantidade = 0L;
+                }
+                totalTipos += quantidade;
+                tiposCrimeProcessos.add(TipoCrimeStat.builder()
+                        .tipoCrime(tipoCrime != null && !tipoCrime.isBlank() ? tipoCrime : "Não especificado")
+                        .quantidade(quantidade)
+                        .percentual(0.0)
+                        .build());
+            }
+        } catch (Exception e) {
+            log.warn("Erro ao buscar crimes por tipo: {}", e.getMessage());
+        }
+
+        if (totalTipos > 0) {
+            for (TipoCrimeStat stat : tiposCrimeProcessos) {
+                double percentual = (stat.getQuantidade() * 100.0) / totalTipos;
+                stat.setPercentual(Math.round(percentual * 100.0) / 100.0);
+            }
+        }
+
         // Crimes mais simulados
         List<TipoCrimeStat> crimesMaisSimulados = new ArrayList<>();
         long totalSimulacoes = simulacaoRegistroRepository.count();
-        
         try {
             var simulacaoList = simulacaoRegistroRepository.countGroupByTipoCrime();
             for (var arr : simulacaoList) {
                 String tipoCrime = (String) arr[0];
                 Long quantidade = (Long) arr[1];
+                if (quantidade == null) {
+                    quantidade = 0L;
+                }
                 double percentual = totalSimulacoes > 0 ? (quantidade * 100.0 / totalSimulacoes) : 0;
                 crimesMaisSimulados.add(TipoCrimeStat.builder()
-                    .tipoCrime(tipoCrime != null ? tipoCrime : "Não especificado")
-                    .quantidade(quantidade)
-                    .percentual(Math.round(percentual * 100.0) / 100.0)
-                    .build());
+                        .tipoCrime(tipoCrime != null && !tipoCrime.isBlank() ? tipoCrime : "Não especificado")
+                        .quantidade(quantidade)
+                        .percentual(Math.round(percentual * 100.0) / 100.0)
+                        .build());
             }
         } catch (Exception e) {
             log.warn("Erro ao buscar crimes mais simulados: {}", e.getMessage());
         }
 
         return CrimeEstatisticasResponse.builder()
-            .crimesPorRegiao(crimesPorRegiao)
-            .crimesMaisSimulados(crimesMaisSimulados)
-            .totalCrimes(totalProcessos)
-            .totalSimulacoes(totalSimulacoes)
-            .build();
+                .crimesPorRegiao(crimesPorRegiao)
+                .crimesMaisSimulados(crimesMaisSimulados)
+                .tiposCrimeProcessos(tiposCrimeProcessos)
+                .totalCrimes(totalCrimes)
+                .totalSimulacoes(totalSimulacoes)
+                .filtroTipoCrime(filtroAplicado)
+                .build();
     }
 }

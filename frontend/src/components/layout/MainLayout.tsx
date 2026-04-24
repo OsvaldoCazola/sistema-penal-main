@@ -1,13 +1,46 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Toaster } from 'react-hot-toast';
+import { ScaleIcon } from '@heroicons/react/24/outline';
+import { cn } from '@/lib/utils';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuthStore } from '@/store/auth.store';
-import { Spinner } from '@/components/ui/Spinner';
-import { ScaleIcon } from '@heroicons/react/24/outline';
+
+/* ── Spinner de carregamento ────────────────────────────────────────────── */
+
+function LoadingScreen() {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-gray-950">
+      <div className="w-14 h-14 rounded-xl bg-primary-800 flex items-center justify-center mb-5">
+        <ScaleIcon className="h-7 w-7 text-white" />
+      </div>
+      {/* Barra de progresso animada */}
+      <div className="w-48 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary-700 rounded-full animate-[loading_1.4s_ease-in-out_infinite]"
+          style={{
+            animation: 'loading 1.4s ease-in-out infinite',
+          }}
+        />
+      </div>
+      <p className="mt-4 text-xs text-gray-400 dark:text-gray-500 font-medium tracking-wide">
+        A carregar o sistema…
+      </p>
+      <style>{`
+        @keyframes loading {
+          0%   { width: 0%;   margin-left: 0%; }
+          50%  { width: 60%;  margin-left: 20%; }
+          100% { width: 0%;   margin-left: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ── MainLayout ─────────────────────────────────────────────────────────── */
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -17,6 +50,33 @@ export function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter();
   const { isAuthenticated, isLoading, setLoading } = useAuthStore();
 
+  /* Estado de colapso da sidebar (desktop) e abertura mobile */
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  /* Restaurar preferência de colapso */
+  useEffect(() => {
+    const stored = localStorage.getItem('sidebar-collapsed');
+    if (stored === 'true') setCollapsed(true);
+  }, []);
+
+  /* Guardar preferência de colapso */
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', String(collapsed));
+  }, [collapsed]);
+
+  /* Toggle combinado: desktop colapsa, mobile abre */
+  const handleToggleSidebar = useCallback(() => {
+    if (window.innerWidth >= 768) {
+      setCollapsed(c => !c);
+    } else {
+      setMobileOpen(o => !o);
+    }
+  }, []);
+
+  const handleCloseMobile = useCallback(() => setMobileOpen(false), []);
+
+  /* Verificar autenticação */
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -27,73 +87,69 @@ export function MainLayout({ children }: MainLayoutProps) {
     }
   }, [router, setLoading]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900">
-        <div className="w-16 h-16 bg-white/10 backdrop-blur rounded flex items-center justify-center mb-6 border border-white/20">
-          <ScaleIcon className="h-8 w-8 text-white" />
-        </div>
-        <Spinner size="lg" className="text-primary-400" />
-        <p className="mt-4 text-primary-400 text-sm font-medium">A carregar o sistema...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (isLoading) return <LoadingScreen />;
+  if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <Toaster 
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
+
+      {/* Toasts */}
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
           style: {
-            borderRadius: '4px',
+            borderRadius: '10px',
             padding: '12px 16px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            fontSize: '14px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
           },
-          success: {
-            iconTheme: {
-              primary: '#16a34a',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#dc2626',
-              secondary: '#fff',
-            },
-          },
+          success: { iconTheme: { primary: '#16a34a', secondary: '#fff' } },
+          error:   { iconTheme: { primary: '#dc2626', secondary: '#fff' } },
         }}
       />
-      <Sidebar />
-      <Header />
-      <main className="fixed top-0 left-56 right-0 bottom-0 z-30 overflow-hidden transition-all duration-300 ml-16 mr-0">
-        <div className="absolute inset-x-0 top-[150px] bottom-0 overflow-y-auto scrollbar-thin">
-          <div className="pt-[50px] min-h-[calc(100vh-190px)] bg-transparent p-6">
-            {children}
-          </div>
-        </div>
-      </main>
 
-      <footer className="border-t border-gray-200 relative overflow-hidden">
-        {/* Gradiente institucional */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900"></div>
-        {/* Barra decorativa */}
-        <div className="flex h-1 relative z-10">
-          <div className="flex-1 bg-primary-800"></div>
-          <div className="flex-1 bg-primary-600"></div>
-          <div className="flex-1 bg-primary-800"></div>
+      {/* Header fixo — 64px */}
+      <Header onToggleSidebar={handleToggleSidebar} />
+
+      {/* Sidebar */}
+      <Sidebar
+        collapsed={collapsed}
+        mobileOpen={mobileOpen}
+        onCloseMobile={handleCloseMobile}
+      />
+
+      {/* Conteúdo principal */}
+      <main className={cn(
+        'transition-all duration-300 ease-in-out',
+        /* Empurrar para baixo do header */
+        'pt-16',
+        /* Empurrar para a direita da sidebar (apenas desktop) */
+        'md:pl-56',
+        collapsed && 'md:pl-[60px]',
+      )}>
+        <div className="min-h-[calc(100vh-64px)] p-6">
+          {children}
         </div>
-        <div className="py-4 px-6 relative z-10">
-          <div className="flex items-center justify-between text-xs text-white/80">
-            <p>© {new Date().getFullYear()} Sistema Penal - República de Angola</p>
-            <p className="font-medium">Ministério da Justiça e dos Direitos Humanos</p>
+
+        {/* Rodapé */}
+        <footer className="border-t border-gray-200 dark:border-gray-800 mt-auto">
+          {/* Barra tricolor Angola */}
+          <div className="h-[3px] flex">
+            <div className="flex-1 bg-[#CC092F]" />
+            <div className="flex-1 bg-[#111111]" />
+            <div className="flex-1 bg-[#FFCC00]" />
           </div>
-        </div>
-      </footer>
+          <div className="px-6 py-3 flex items-center justify-between">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              © {new Date().getFullYear()} Sistema Penal · República de Angola
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-600 font-medium hidden sm:block">
+              Ministério da Justiça e dos Direitos Humanos
+            </p>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }

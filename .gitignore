@@ -39,10 +39,14 @@ frontend/.next/
 frontend/out/
 frontend/dist/
 
-### Environment ###
+### Environment — NUNCA commitar ficheiros .env reais ###
 .env
 .env.local
 .env.production
+.env.staging
+.env.development
+# Permitir apenas o exemplo (sem valores reais)
+!.env.example
 
 ### Logs ###
 *.log
@@ -52,18 +56,18 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Cache directories
+### Cache ###
 .kilo/
 .cache/
 .temp/
 
-# OS generated files  
+### Temp ###
 nul
 NUL
 *.tmp
 cookies.txt
 
-# IDE files
+### IDE ###
 .idea/
 .vscode/
 *.swp

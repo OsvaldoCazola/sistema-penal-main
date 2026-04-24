@@ -10,28 +10,54 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
-    
-    const variants = {
-      primary: 'bg-gradient-to-r from-primary-700 to-primary-600 text-white hover:from-primary-800 hover:to-primary-700 focus:ring-primary-700 shadow-md',
-      secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500 border border-gray-300',
-      danger: 'bg-red-700 text-white hover:bg-red-800 focus:ring-red-500 shadow-sm',
-      ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-400',
-      outline: 'border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white focus:ring-primary-700',
+  ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, style, ...props }, ref) => {
+    const base = 'inline-flex items-center justify-center font-medium rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+
+    /* Variantes que não dependem de tema — fundos fixos */
+    const staticVariants: Record<string, string> = {
+      primary:       'bg-gradient-to-r from-primary-700 to-primary-600 text-white hover:from-primary-800 hover:to-primary-700 focus:ring-primary-700 shadow-md',
+      danger:        'bg-red-700 text-white hover:bg-red-800 focus:ring-red-500 shadow-sm',
       institucional: 'bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 text-white hover:from-primary-800 hover:via-primary-700 hover:to-primary-600 focus:ring-primary-700 shadow-lg',
     };
-    
+
+    /* Variantes que usam variáveis CSS (respondem ao tema) */
+    const themedStyles: Record<string, React.CSSProperties> = {
+      secondary: {
+        backgroundColor: 'var(--bg-surface-2)',
+        borderColor:     'var(--border)',
+        color:           'var(--text-secondary)',
+        border:          '1px solid var(--border)',
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        color:           'var(--text-secondary)',
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        borderColor:     'var(--text-primary)',
+        color:           'var(--text-primary)',
+        border:          '2px solid var(--border-strong)',
+      },
+    };
+
     const sizes = {
       sm: 'px-3 py-1.5 text-sm gap-1.5',
       md: 'px-4 py-2 text-sm gap-2',
       lg: 'px-6 py-3 text-base gap-2',
     };
 
+    const isThemed = variant in themedStyles;
+
     return (
       <button
         ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        className={cn(
+          base,
+          sizes[size],
+          isThemed ? 'hover:opacity-80' : staticVariants[variant],
+          className
+        )}
+        style={isThemed ? { ...themedStyles[variant], ...style } : style}
         disabled={disabled || isLoading}
         {...props}
       >
