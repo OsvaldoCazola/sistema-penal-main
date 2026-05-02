@@ -1,4 +1,4 @@
-# Sistema de Direito Penal Angolano - API
+z# Sistema de Direito Penal Angolano - API
 
 Sistema Web Inteligente para Assistência na Aplicação do Direito Penal Angolano com Base em Fatos e Leis Vigentes.
 
@@ -8,15 +8,7 @@ Sistema Web Inteligente para Assistência na Aplicação do Direito Penal Angola
 - **PostgreSQL 14+** com extensões:
   - `uuid-ossp`
   - `pg_trgm` (para busca fuzzy)
-- **Maven 3.8+** (ou use o wrapper `mvnw`)
-
-## 🗄️ Configuração do Banco de Dados
-
-### 1. Criar o banco de dados
-
-```sql
-CREATE DATABASE sistema_penal;
-```
+- **Mav
 
 ### 2. Conectar ao banco e criar extensões
 

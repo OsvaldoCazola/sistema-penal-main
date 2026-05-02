@@ -26,8 +26,8 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public Page<UsuarioSummaryResponse> listar(Pageable pageable) {
-        return usuarioRepository.findAll(pageable)
+    public Page<UsuarioSummaryResponse> listarPorRoles(Pageable pageable, Iterable<Role> roles) {
+        return usuarioRepository.findByRoleIn(roles, pageable)
                 .map(UsuarioSummaryResponse::from);
     }
 
@@ -52,6 +52,9 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponse criar(RegisterRequest request, Role role) {
+        if (role != Role.ADMIN && role != Role.ESTUDANTE) {
+            throw new BusinessException("Role inválida. Apenas ADMIN ou ESTUDANTE");
+        }
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new BusinessException("Email já cadastrado: " + request.email());
         }
@@ -103,6 +106,9 @@ public class UsuarioService {
 
     @Transactional
     public void resetarSenha(UUID id, String novaSenha) {
+        if (novaSenha == null || novaSenha.isBlank()) {
+            throw new BusinessException("Nova senha é obrigatória");
+        }
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
         usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
@@ -110,11 +116,14 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void alterarRole(UUID id, Role novaRole) {
+    public UsuarioResponse alterarRole(UUID id, Role novaRole) {
+        if (novaRole != Role.ADMIN && novaRole != Role.ESTUDANTE) {
+            throw new BusinessException("Role inválida. Apenas ADMIN ou ESTUDANTE");
+        }
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
         usuario.setRole(novaRole);
-        usuarioRepository.save(usuario);
+        return UsuarioResponse.from(usuarioRepository.save(usuario));
     }
 
     @Transactional

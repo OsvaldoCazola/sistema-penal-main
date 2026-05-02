@@ -23,6 +23,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     Page<Usuario> findByRole(Role role, Pageable pageable);
 
+    Page<Usuario> findByRoleIn(Iterable<Role> roles, Pageable pageable);
+
     @Query("SELECT u FROM Usuario u WHERE LOWER(u.nome) LIKE LOWER(CONCAT('%', :termo, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :termo, '%'))")
     Page<Usuario> buscarPorTermo(@Param("termo") String termo, Pageable pageable);
 
@@ -32,7 +34,4 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     Page<Usuario> findByAtivoTrue(Pageable pageable);
 
-    // Query que busca usuário com permissões inicializadas (evita N+1)
-    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.permissions WHERE u.id = :id")
-    Optional<Usuario> findByIdWithPermissions(@Param("id") UUID id);
 }

@@ -36,7 +36,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:3001}")
+    @Value("${security.cors.allowed-origins:http://localhost:3000,http://localhost:3001,http://localhost:3002}")
     private String[] allowedOrigins;
 
     @Bean
@@ -51,59 +51,30 @@ public class SecurityConfig {
                 // ── Preflight OPTIONS ────────────────────────────────────
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // ── Autenticação (pública) ───────────────────────────────
-                .requestMatchers("/auth/login").permitAll()
-                .requestMatchers("/auth/register").permitAll()
-                .requestMatchers("/auth/refresh").permitAll()
-                .requestMatchers("/auth/logout").permitAll()
-                .requestMatchers("/auth/esqueci-senha").permitAll()
-                .requestMatchers("/auth/redefinir-senha").permitAll()
+                // ── Autenticação pública ───────────────────────────────
+                .requestMatchers("/auth/**").permitAll()
 
-                // CORRIGIDO: /auth/register-admin só acessível para ADMIN autenticado
-                // (não deve ser endpoint público em produção)
-                .requestMatchers("/auth/register-admin").hasRole("ADMIN")
+                // ── Documentação ────────────────────────────────────────
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api-docs/**").permitAll()
 
-                // ── Swagger / OpenAPI ────────────────────────────────────
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api-docs/**").permitAll()
-
-                // ── Actuator (health e info são públicos) ─────────────────
+                // ── Actuator ─────────────────────────────────────────────
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
 
-                // ── Console H2 (apenas em dev, bloqueado via perfil) ──────
+                // ── Console H2 (apenas dev) ──────────────────────────────
                 .requestMatchers("/h2-console/**").permitAll()
 
-                // ── Leitura pública de legislação ─────────────────────────
+                // ── Conteúdos públicos ───────────────────────────────────
                 .requestMatchers(HttpMethod.GET, "/leis/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/artigos/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/sentencas/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/busca/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/tipos-crime/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/noticias/**").permitAll()
 
-                // ── Chat público ──────────────────────────────────────────
-                .requestMatchers(HttpMethod.POST, "/chat").permitAll()
+                // ── Área educacional ─────────────────────────────────────
+                .requestMatchers("/api/casos/**", "/api/progresso/**").hasAnyRole("ESTUDANTE", "ADMIN")
+                .requestMatchers("/api/simulador/**").hasAnyRole("ESTUDANTE", "ADMIN")
 
-                // ── Denúncias (envio público, consulta por protocolo) ─────
-                .requestMatchers(HttpMethod.POST, "/denuncias").permitAll()
-                .requestMatchers(HttpMethod.GET, "/denuncias/consulta/**").permitAll()
+                // ── Gestão administrativa ────────────────────────────────
+                .requestMatchers("/api/admin/**", "/api/usuarios/**", "/api/permissions/**").hasRole("ADMIN")
 
-                // ── Escrita em legislação — apenas ADMIN ──────────────────
-                .requestMatchers(HttpMethod.POST, "/leis/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/leis/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/leis/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/leis/**").hasRole("ADMIN")
-
-                // ── Admin geral ────────────────────────────────────────────
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/permissions/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/permissions/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/permissions/**").hasRole("ADMIN")
-                .requestMatchers("/api/permissions").hasRole("ADMIN")
-                .requestMatchers("/api/permissions/usuario/*").hasRole("ADMIN")
-
-                // ── Tudo o resto requer autenticação ──────────────────────
+                // ── Demais endpoints ─────────────────────────────────────
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

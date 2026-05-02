@@ -24,6 +24,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -70,7 +71,7 @@ public class UsuarioController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Listar todos os usuários")
+    @Operation(summary = "Listar usuários (apenas Admin e Estudante)")
     public ResponseEntity<Page<UsuarioSummaryResponse>> listar(
             @RequestParam(required = false) Role role,
             @RequestParam(required = false) String busca,
@@ -80,42 +81,59 @@ public class UsuarioController {
         if (busca != null && !busca.isBlank()) {
             result = usuarioService.buscar(busca, pageable);
         } else if (role != null) {
+            if (role != Role.ADMIN && role != Role.ESTUDANTE) {
+                return ResponseEntity.ok(Page.empty(pageable));
+            }
             result = usuarioService.listarPorRole(role, pageable);
         } else {
-            result = usuarioService.listar(pageable);
+            result = usuarioService.listarPorRoles(pageable, List.of(Role.ADMIN, Role.ESTUDANTE));
         }
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Buscar usuário por ID")
+    @Operation(summary = "Buscar usuário por ID (Admin/Estudante)")
     public ResponseEntity<UsuarioResponse> buscarPorId(@PathVariable UUID id) {
-        return ResponseEntity.ok(usuarioService.buscarPorId(id));
+        UsuarioResponse usuario = usuarioService.buscarPorId(id);
+        if (usuario.role().equals(Role.ADMIN.name()) || usuario.role().equals(Role.ESTUDANTE.name())) {
+            return ResponseEntity.ok(usuario);
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Criar novo usuário")
+    @Operation(summary = "Criar novo usuário (Admin ou Estudante)")
     public ResponseEntity<UsuarioResponse> criar(
             @Valid @RequestBody RegisterRequest request
     ) {
+        if (request.role() != Role.ADMIN && request.role() != Role.ESTUDANTE) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(null);
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(usuarioService.criar(request, request.role()));
     }
 
-    // Endpoint removido para garantir que admin não possa editar usuários
-    // O admin pode apenas criar usuários, listar e alterar roles
-    
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Alterar role do usuário")
-    public ResponseEntity<Map<String, String>> alterarRole(
+    public ResponseEntity<UsuarioResponse> alterarRole(
             @PathVariable UUID id,
-            @RequestBody Role role
+            @RequestBody Map<String, String> body
     ) {
-        usuarioService.alterarRole(id, role);
-        return ResponseEntity.ok(Map.of("message", "Role alterada para " + role));
+        String roleValue = body.get("role");
+        if (roleValue == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        Role role;
+        try {
+            role = Role.valueOf(roleValue);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(usuarioService.alterarRole(id, role));
     }
 
     @PostMapping("/{id}/resetar-senha")
@@ -160,7 +178,7 @@ public class UsuarioController {
         return ResponseEntity.ok(Map.of(
                 "totalAtivos", usuarioService.contarAtivos(),
                 "admins", usuarioService.contarPorRole(Role.ADMIN),
-                "advogados", usuarioService.contarPorRole(Role.ADVOGADO)
+                "estudantes", usuarioService.contarPorRole(Role.ESTUDANTE)
         ));
     }
 }

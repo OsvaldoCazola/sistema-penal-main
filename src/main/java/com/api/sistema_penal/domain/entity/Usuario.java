@@ -38,15 +38,6 @@ public class Usuario implements UserDetails {
     @Builder.Default
     private Role role = Role.ESTUDANTE;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "usuario_permissions",
-            joinColumns = @JoinColumn(name = "usuario_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
-    @Builder.Default
-    private Set<Permission> permissions = new HashSet<>();
-
     @Builder.Default
     private Boolean ativo = true;
 
@@ -83,28 +74,6 @@ public class Usuario implements UserDetails {
         if (role != null) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
         }
-        
-        // Inicializa permissions com proteção contra proxy Hibernate não inicializado
-        Set<Permission> perms;
-        try {
-            // Tenta acessar para forçar inicialização se for proxy
-            if (permissions == null) {
-                perms = new HashSet<>();
-            } else {
-                perms = new HashSet<>(permissions);
-            }
-        } catch (org.hibernate.LazyInitializationException e) {
-            // Se falhar por lazy loading, cria coleção vazia e loga warning
-            perms = new HashSet<>();
-        }
-        
-        // Adiciona cada permissão como autoridade
-        for (Permission permission : perms) {
-            if (permission != null && permission.getName() != null) {
-                authorities.add(new SimpleGrantedAuthority("PERM_" + permission.getName().toUpperCase()));
-            }
-        }
-        
         return authorities;
     }
 
@@ -140,9 +109,6 @@ public class Usuario implements UserDetails {
 
     public enum Role {
         ADMIN,
-        JUIZ,
-        PROCURADOR,
-        ADVOGADO,
         ESTUDANTE
     }
 }

@@ -47,11 +47,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 Usuario usuario = null;
                 
-                // Tentar buscar por ID primeiro (mais eficiente com permissões)
+                // Tentar buscar por ID primeiro (mais eficiente)
                 try {
                     String userIdStr = jwtService.extractUserId(jwt);
                     if (userIdStr != null && !userIdStr.isEmpty()) {
-                        usuario = usuarioRepository.findByIdWithPermissions(UUID.fromString(userIdStr)).orElse(null);
+                        usuario = usuarioRepository.findById(UUID.fromString(userIdStr)).orElse(null);
                     }
                 } catch (Exception e) {
                     log.debug("Token não contém userId, buscando por email");
